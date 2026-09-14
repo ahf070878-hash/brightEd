@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BrightEd LMS</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/enterprise.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace-content">Lewati ke konten utama</a>
+    <main class="app-shell">
+      <section class="hero-panel" aria-labelledby="page-title">
+        <nav class="topbar" aria-label="Navigasi utama">
+          <a class="brand" href="/">
+            <img class="brand-logo" src="/assets/brighted-logo-on-white.png" alt="BrightEd Akademi" />
+          </a>
+          <div class="top-actions">
+            <a href="/api/health">Status API</a>
+            <a class="button button-ghost" href="#login">Masuk</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">BRIGHTED / LEARNING EXPERIENCE</p>
+            <h1 id="page-title">Langkah kecil.<br>Potensi <em>besar.</em></h1>
+            <p>
+              Ruang belajar BrightEd untuk mengakses SkillHub aktif,
+              mengikuti materi SCORM, melihat hasil test, dan menyimpan
+              sertifikat dalam satu tempat yang rapi.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#login">Mulai belajar</a>
+              <a class="button button-secondary" href="#dashboard">Lihat modul</a>
+            </div>
+          </div>
+
+          <aside class="login-panel" id="login" aria-label="Form login">
+            <p class="panel-note">Memuat form login...</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="dashboard-panel" id="dashboard" aria-labelledby="dashboard-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h2 id="dashboard-title">Modul inti LMS BrightEd</h2>
+          </div>
+          <span class="status-pill">Learning workspace</span>
+        </div>
+
+        <div class="module-grid">
+          <article class="module-card accent-growth">
+            <span>01</span>
+            <h3>SkillHub</h3>
+            <p>Katalog belajar berisi course, lesson, materi SCORM, dan test.</p>
+          </article>
+          <article class="module-card accent-sky">
+            <span>02</span>
+            <h3>Penilaian</h3>
+            <p>Quiz, hasil test, status lulus, dan riwayat nilai siswa.</p>
+          </article>
+          <article class="module-card accent-orange">
+            <span>03</span>
+            <h3>Pendaftaran</h3>
+            <p>Admin mendaftarkan siswa, memilih sekolah, dan assign SkillHub.</p>
+          </article>
+          <article class="module-card accent-growth">
+            <span>04</span>
+            <h3>SCORM</h3>
+            <p>Upload ZIP, launch, resume, score, completion, dan waktu belajar.</p>
+          </article>
+          <article class="module-card accent-sky">
+            <span>05</span>
+            <h3>Sertifikasi</h3>
+            <p>Sertifikat bernomor unik dengan QR/public verification.</p>
+          </article>
+          <article class="module-card accent-orange">
+            <span>06</span>
+            <h3>Akses Arsip</h3>
+            <p>Setelah 1 tahun, materi terkunci dan bukti belajar tetap terlihat.</p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="admin-workspace"
+        data-admin-dashboard
+        id="workspace-content" tabindex="-1"
+        aria-live="polite"
+        hidden
+      ></section>
+    </main>
+    <script src="/i18n.js" defer></script>
+    <script src="/material-upload.js" defer></script>
+    <script src="/scorm-runtime.js" defer></script>
+    <script src="/bulk-assignment.js" defer></script>
+    <script src="/school-dialog.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

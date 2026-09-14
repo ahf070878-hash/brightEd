@@ -1,0 +1,269 @@
+{
+  "passing_score": 70,
+  "max_attempts": 3,
+  "certificate_required": false,
+  "questions": [
+    {
+      "id": "k3m-01",
+      "module": 1,
+      "prompt": "Saat persiapan kerja di dek, Anda menemukan kondisi baru yang belum dibahas dalam pengarahan. Apa tindakan paling tepat?",
+      "options": [
+        "Hentikan sementara pekerjaan terkait dan laporkan agar risiko dinilai kembali",
+        "Mulai bekerja karena pengarahan sudah selesai",
+        "Biarkan rekan pertama mencoba sebelum mengikuti",
+        "Lanjutkan selama pekerjaan dapat diselesaikan dengan cepat"
+      ],
+      "correct_answer": "Hentikan sementara pekerjaan terkait dan laporkan agar risiko dinilai kembali",
+      "explanation": "Perubahan kondisi perlu dinilai sebelum pekerjaan dilanjutkan."
+    },
+    {
+      "id": "k3m-02",
+      "module": 1,
+      "prompt": "Apa tujuan utama toolbox meeting sebelum pekerjaan berisiko?",
+      "options": [
+        "Membahas pekerjaan setelah seluruh aktivitas selesai",
+        "Menyamakan pemahaman tentang langkah kerja, bahaya, pengendalian, dan tanggung jawab",
+        "Menggantikan seluruh izin kerja yang diperlukan",
+        "Menetapkan bahwa semua risiko menjadi tanggung jawab pekerja"
+      ],
+      "correct_answer": "Menyamakan pemahaman tentang langkah kerja, bahaya, pengendalian, dan tanggung jawab",
+      "explanation": "Toolbox meeting mengomunikasikan rencana kerja dan pengendalian kepada tim."
+    },
+    {
+      "id": "k3m-03",
+      "module": 2,
+      "prompt": "Tali tambat yang tegang dapat menyambar ketika putus. Dalam penilaian risiko, tali tegang tersebut merupakan apa?",
+      "options": [
+        "Bukti bahwa pengendalian sudah efektif",
+        "Tindakan administratif untuk mencegah insiden",
+        "Sumber bahaya yang dapat menyebabkan cedera",
+        "Nilai risiko akhir yang sudah dihitung"
+      ],
+      "correct_answer": "Sumber bahaya yang dapat menyebabkan cedera",
+      "explanation": "Bahaya adalah sumber potensi cedera; risiko mempertimbangkan kemungkinan dan dampaknya."
+    },
+    {
+      "id": "k3m-04",
+      "module": 2,
+      "prompt": "Apa urutan hierarki pengendalian risiko dari yang paling diutamakan?",
+      "options": [
+        "APD, administratif, rekayasa teknis, substitusi, eliminasi",
+        "Administratif, APD, eliminasi, substitusi, rekayasa teknis",
+        "Substitusi, APD, administratif, rekayasa teknis, eliminasi",
+        "Eliminasi, substitusi, rekayasa teknis, administratif, APD"
+      ],
+      "correct_answer": "Eliminasi, substitusi, rekayasa teknis, administratif, APD",
+      "explanation": "Utamakan pengendalian pada sumber bahaya; APD merupakan lapisan terakhir."
+    },
+    {
+      "id": "k3m-05",
+      "module": 2,
+      "prompt": "Setelah pekerjaan dipecah menjadi langkah-langkah dalam JSA, apa yang dilakukan berikutnya?",
+      "options": [
+        "Identifikasi bahaya pada setiap langkah lalu tentukan pengendaliannya",
+        "Langsung memberi izin semua anggota tim untuk mulai bekerja",
+        "Menentukan siapa yang disalahkan jika terjadi kecelakaan",
+        "Menghapus langkah pekerjaan yang memerlukan APD dari dokumen"
+      ],
+      "correct_answer": "Identifikasi bahaya pada setiap langkah lalu tentukan pengendaliannya",
+      "explanation": "JSA menghubungkan setiap langkah kerja dengan bahaya dan pengendalian yang sesuai."
+    },
+    {
+      "id": "k3m-06",
+      "module": 3,
+      "prompt": "Mengapa penggunaan APD saja belum tentu cukup untuk mengendalikan risiko?",
+      "options": [
+        "APD menjadikan semua pekerjaan aman tanpa penilaian risiko",
+        "APD tidak menghilangkan sumber bahaya dan bergantung pada pemakaian yang benar",
+        "APD hanya diperlukan oleh pekerja yang belum berpengalaman",
+        "APD otomatis menggantikan kebutuhan inspeksi peralatan"
+      ],
+      "correct_answer": "APD tidak menghilangkan sumber bahaya dan bergantung pada pemakaian yang benar",
+      "explanation": "APD melengkapi pengendalian lain dan tidak menghilangkan bahaya di sumbernya."
+    },
+    {
+      "id": "k3m-07",
+      "module": 3,
+      "prompt": "Saat inspeksi sebelum kerja, tali harness tampak rusak. Apa tindakan yang tepat?",
+      "options": [
+        "Tambal sendiri dan lanjutkan pekerjaan tanpa pemeriksaan",
+        "Pinjam lanyard lain tanpa memeriksa kesesuaian sistemnya",
+        "Jangan gunakan; laporkan dan gunakan peralatan pengganti yang layak sesuai prosedur",
+        "Gunakan selama kerusakan tidak terasa saat dipakai"
+      ],
+      "correct_answer": "Jangan gunakan; laporkan dan gunakan peralatan pengganti yang layak sesuai prosedur",
+      "explanation": "Peralatan pelindung yang rusak tidak boleh dijadikan dasar perlindungan saat bekerja."
+    },
+    {
+      "id": "k3m-08",
+      "module": 4,
+      "prompt": "Dalam operasi mooring, bagaimana sikap yang tepat terhadap snap-back zone?",
+      "options": [
+        "Berdiri dekat tali tegang agar perubahan tarikan mudah terlihat",
+        "Melangkahi tali yang bergerak selama memakai sepatu safety",
+        "Menganggap area aman selama tali belum pernah putus",
+        "Jauhi area berbahaya dan ikuti pengaturan posisi aman serta komunikasi tim"
+      ],
+      "correct_answer": "Jauhi area berbahaya dan ikuti pengaturan posisi aman serta komunikasi tim",
+      "explanation": "Tali bertegangan menyimpan energi; pengaturan posisi dan komunikasi penting untuk menghindari area bahaya."
+    },
+    {
+      "id": "k3m-09",
+      "module": 4,
+      "prompt": "Anda melihat rekan tidak sadarkan diri di ruang terbatas. Apa tindakan awal yang tepat?",
+      "options": [
+        "Bunyikan alarm atau panggil bantuan dan aktifkan prosedur penyelamatan; jangan masuk tanpa tim terlatih dan pengamanan yang dipersyaratkan",
+        "Segera masuk sendirian sambil menahan napas",
+        "Masuk setelah memakai masker debu biasa",
+        "Minta rekan lain masuk dahulu untuk memastikan penyebabnya"
+      ],
+      "correct_answer": "Bunyikan alarm atau panggil bantuan dan aktifkan prosedur penyelamatan; jangan masuk tanpa tim terlatih dan pengamanan yang dipersyaratkan",
+      "explanation": "Penyelamatan ruang terbatas memerlukan prosedur, personel terlatih, dan peralatan yang sesuai agar tidak menambah korban."
+    },
+    {
+      "id": "k3m-10",
+      "module": 4,
+      "prompt": "Ruang terbatas sudah dibuka selama beberapa waktu. Apa kesimpulan yang benar?",
+      "options": [
+        "Setiap anggota tim boleh masuk jika menggunakan helm",
+        "Pembukaan saja tidak membuktikan aman; prosedur izin masuk, penilaian, pengujian atmosfer dan pengendalian tetap diperlukan",
+        "Udara di dalam pasti sama dengan udara luar",
+        "Pengujian atmosfer hanya diperlukan jika ada bau"
+      ],
+      "correct_answer": "Pembukaan saja tidak membuktikan aman; prosedur izin masuk, penilaian, pengujian atmosfer dan pengendalian tetap diperlukan",
+      "explanation": "Atmosfer berbahaya tidak selalu dapat dikenali dengan indera; ikuti prosedur masuk ruang terbatas."
+    },
+    {
+      "id": "k3m-11",
+      "module": 4,
+      "prompt": "Apa fungsi fire watch dalam pekerjaan panas?",
+      "options": [
+        "Menjamin bahwa izin kerja tidak diperlukan",
+        "Meninggalkan lokasi segera setelah alat las dimatikan",
+        "Memantau potensi kebakaran selama pekerjaan dan periode pemantauan sesudahnya sesuai izin kerja",
+        "Menggantikan kebutuhan membersihkan bahan mudah terbakar"
+      ],
+      "correct_answer": "Memantau potensi kebakaran selama pekerjaan dan periode pemantauan sesudahnya sesuai izin kerja",
+      "explanation": "Potensi penyalaan masih dapat ada setelah pekerjaan panas berakhir; pemantauan mengikuti izin kerja."
+    },
+    {
+      "id": "k3m-12",
+      "module": 5,
+      "prompt": "Ketika melihat seseorang jatuh ke laut, apa respons awal yang tepat sesuai materi?",
+      "options": [
+        "Melompat sendiri ke laut tanpa koordinasi",
+        "Meninggalkan lokasi untuk mengambil telepon pribadi",
+        "Menunggu hingga orang lain memastikan kejadian tersebut",
+        "Teriakkan lokasi korban, lempar alat apung jika tersedia, pertahankan pengamatan dan pastikan anjungan diberi tahu"
+      ],
+      "correct_answer": "Teriakkan lokasi korban, lempar alat apung jika tersedia, pertahankan pengamatan dan pastikan anjungan diberi tahu",
+      "explanation": "Peringatan, bantuan daya apung, pengamatan, dan komunikasi mempercepat respons terkoordinasi."
+    },
+    {
+      "id": "k3m-13",
+      "module": 5,
+      "prompt": "Apa arti urutan PASS dalam penggunaan APAR yang dijelaskan pada materi?",
+      "options": [
+        "Pull, Aim, Squeeze, Sweep",
+        "Push, Aim, Stop, Spray",
+        "Pull, Alert, Stand, Stop",
+        "Push, Apply, Sweep, Secure"
+      ],
+      "correct_answer": "Pull, Aim, Squeeze, Sweep",
+      "explanation": "PASS berarti menarik pin, mengarahkan, menekan tuas, dan menyapukan semprotan; pengguna tetap harus terlatih dan mengikuti prosedur darurat."
+    },
+    {
+      "id": "k3m-14",
+      "module": 5,
+      "prompt": "Saat alarm darurat berbunyi, apa acuan utama untuk mengetahui tugas dan tempat berkumpul Anda?",
+      "options": [
+        "Arahan penumpang yang kebetulan berada di dekat Anda",
+        "Muster list dan instruksi darurat kapal",
+        "Lokasi paling dekat dengan kabin pribadi",
+        "Kebiasaan di kapal sebelumnya meskipun penugasannya berbeda"
+      ],
+      "correct_answer": "Muster list dan instruksi darurat kapal",
+      "explanation": "Tugas darurat dan titik kumpul mengikuti pengaturan kapal yang sedang dioperasikan."
+    },
+    {
+      "id": "k3m-15",
+      "module": 6,
+      "prompt": "Seorang awak sulit mempertahankan kewaspadaan saat tugas jaga. Apa langkah paling tepat?",
+      "options": [
+        "Andalkan minuman berkafein sebagai pengganti istirahat",
+        "Lanjutkan tugas berisiko sendirian agar lebih cepat selesai",
+        "Laporkan kelelahan dan koordinasikan penanganan sesuai pengaturan kerja dan istirahat kapal",
+        "Sembunyikan kondisi agar jadwal tidak berubah"
+      ],
+      "correct_answer": "Laporkan kelelahan dan koordinasikan penanganan sesuai pengaturan kerja dan istirahat kapal",
+      "explanation": "Kelelahan perlu dilaporkan dan ditangani, bukan disembunyikan atau dianggap selesai dengan stimulan."
+    },
+    {
+      "id": "k3m-16",
+      "module": 6,
+      "prompt": "Beban yang akan dipindahkan terlalu berat atau sulit dipegang dengan aman. Apa pilihan terbaik?",
+      "options": [
+        "Angkat dengan gerakan mendadak agar beban cepat terangkat",
+        "Putar pinggang sambil membawa beban agar perjalanan lebih singkat",
+        "Tetap angkat sendiri karena jaraknya dekat",
+        "Nilai ulang tugas dan gunakan alat bantu atau bantuan personel sesuai prosedur"
+      ],
+      "correct_answer": "Nilai ulang tugas dan gunakan alat bantu atau bantuan personel sesuai prosedur",
+      "explanation": "Penilaian tugas, alat bantu, dan bantuan yang tepat lebih aman daripada memaksakan pengangkatan."
+    },
+    {
+      "id": "k3m-17",
+      "module": 7,
+      "prompt": "Tali hampir mengenai awak, tetapi tidak terjadi cedera. Bagaimana kejadian ini ditangani?",
+      "options": [
+        "Laporkan sebagai near miss agar penyebab dan tindakan pencegahannya dievaluasi",
+        "Tidak perlu dicatat karena tidak ada biaya pengobatan",
+        "Tunggu sampai kejadian yang sama menimbulkan cedera",
+        "Catat hanya bila ada kerusakan peralatan"
+      ],
+      "correct_answer": "Laporkan sebagai near miss agar penyebab dan tindakan pencegahannya dievaluasi",
+      "explanation": "Near miss memberikan kesempatan perbaikan sebelum terjadi cedera atau kerugian."
+    },
+    {
+      "id": "k3m-18",
+      "module": 7,
+      "prompt": "Apa tujuan metode 5-Why dalam investigasi insiden?",
+      "options": [
+        "Membatasi laporan menjadi tepat lima kalimat",
+        "Menelusuri akar penyebab agar tindakan perbaikan mencegah kejadian berulang",
+        "Mendapatkan lima nama pekerja yang dapat disalahkan",
+        "Mengganti kebutuhan mengumpulkan fakta kejadian"
+      ],
+      "correct_answer": "Menelusuri akar penyebab agar tindakan perbaikan mencegah kejadian berulang",
+      "explanation": "Investigasi perlu mencari penyebab mendasar dan perbaikan sistem, bukan sekadar menyalahkan individu."
+    },
+    {
+      "id": "k3m-19",
+      "module": 8,
+      "prompt": "Setelah suatu insiden, prosedur telah diperbaiki dan tim diberi pengarahan. Apa langkah evaluasi berikutnya?",
+      "options": [
+        "Anggap risiko hilang tanpa observasi pekerjaan",
+        "Hentikan pelaporan near miss untuk mengurangi administrasi",
+        "Periksa apakah tindakan diterapkan dan efektif mengendalikan risiko",
+        "Tutup seluruh laporan karena dokumen sudah diperbarui"
+      ],
+      "correct_answer": "Periksa apakah tindakan diterapkan dan efektif mengendalikan risiko",
+      "explanation": "Tindakan perbaikan perlu ditindaklanjuti dan dinilai efektivitasnya."
+    },
+    {
+      "id": "k3m-20",
+      "module": 8,
+      "prompt": "Apa bukti penerapan budaya K3 yang paling tepat setelah mengikuti pelatihan?",
+      "options": [
+        "Mengandalkan nilai ujian sebagai pengganti pemeriksaan sebelum kerja",
+        "Mengurangi toolbox meeting karena tim telah memiliki sertifikat",
+        "Mengutamakan kecepatan ketika target kerja belum tercapai",
+        "Menerapkan prosedur, melaporkan bahaya dan menghentikan pekerjaan yang tidak aman sesuai kewenangan"
+      ],
+      "correct_answer": "Menerapkan prosedur, melaporkan bahaya dan menghentikan pekerjaan yang tidak aman sesuai kewenangan",
+      "explanation": "Kompetensi K3 perlu diterapkan dalam perilaku dan keputusan kerja sehari-hari."
+    }
+  ],
+  "source": "SCORM-K3-ABK-Maritim.zip; course-data.js",
+  "version": "1.0"
+}

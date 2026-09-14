@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2026-09-14",
+    "scope": "app",
+    "macrostructure": "Executive workbench with persistent navigation rail",
+    "theme": "BrightEd warm enterprise",
+    "enrichment": "none",
+    "brief": "Refine the LMS presentation across all roles with an executive overview, truthful visualizations, shared typography, accessible states and responsive navigation."
+  },
+  {
+    "date": "2026-09-12",
+    "macrostructure": "Split App Shell",
+    "theme": "BrightEd operational",
+    "enrichment": "none",
+    "brief": "Create BrightEd LMS web app theme following brightedakademi.com"
+  }
+]

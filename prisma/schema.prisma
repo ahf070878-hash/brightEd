@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  pengawas
+  fasilitator
+  peserta
+}
+
+enum StatusAkses {
+  aktif
+  arsip
+}
+
+enum ContentStatus {
+  draft
+  publish
+}
+
+enum ContentType {
+  video
+  article
+  pdf
+  scorm
+  quiz
+}
+
+enum EnrollmentStatus {
+  enrolled
+  in_progress
+  completed
+  dropped
+}
+
+enum ScormStatus {
+  not_attempted
+  incomplete
+  completed
+  passed
+  failed
+}
+
+enum CertificateStatus {
+  active
+  revoked
+}
+
+model Sekolah {
+  id           String      @id @default(uuid())
+  nama         String      @db.VarChar(255)
+  kode_sekolah String      @unique @db.VarChar(50)
+  alamat       String?     @db.Text
+  status_akses StatusAkses @default(aktif)
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  users User[]
+
+  @@map("sekolah")
+}
+
+model User {
+  id                 String      @id @default(uuid())
+  nama               String      @db.VarChar(255)
+  email              String      @unique @db.VarChar(255)
+  password           String      @db.VarChar(255)
+  role               UserRole    @default(peserta)
+  status_akses       StatusAkses @default(aktif)
+  masa_aktif_mulai   DateTime?
+  masa_aktif_selesai DateTime?
+
+  sekolah_id String?
+  sekolah    Sekolah? @relation(fields: [sekolah_id], references: [id], onDelete: SetNull)
+
+  pengawas_id      String?
+  pengawas         User?  @relation("PengawasHierarki", fields: [pengawas_id], references: [id], onDelete: SetNull)
+  bawahan_pengawas User[] @relation("PengawasHierarki")
+
+  fasilitator_id    String?
+  fasilitator       User?  @relation("FasilitatorPeserta", fields: [fasilitator_id], references: [id], onDelete: SetNull)
+  peserta_bimbingan User[] @relation("FasilitatorPeserta")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  enrollments         Enrollment[]
+  assessment_attempts AssessmentAttempt[]
+  scorm_progresses    ScormProgress[]
+  certificates        Certificate[]
+  activity_logs       ActivityLog[] @relation("ActivityActor")
+
+  @@index([role])
+  @@index([status_akses])
+  @@index([sekolah_id])
+  @@index([fasilitator_id])
+  @@index([pengawas_id])
+  @@map("users")
+}
+
+model SkillHub {
+  id         String        @id @default(uuid())
+  nama       String        @db.VarChar(255)
+  deskripsi  String?       @db.Text
+  status     ContentStatus @default(draft)
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+
+  courses      Course[]
+  assessments  Assessment[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+
+  @@map("skillhubs")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  skillhub_id String
+  skillhub    SkillHub @relation(fields: [skillhub_id], references: [id], onDelete: Cascade)
+  judul       String   @db.VarChar(255)
+  urutan      Int      @default(1)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  lessons Lesson[]
+
+  @@index([skillhub_id])
+  @@map("courses")
+}
+
+model Lesson {
+  id          String      @id @default(uuid())
+  course_id   String
+  course      Course      @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  judul       String      @db.VarChar(255)
+  tipe_konten ContentType @default(article)
+  urutan      Int         @default(1)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  scorm_package ScormPackage?
+
+  @@index([course_id])
+  @@map("lessons")
+}
+
+model ScormPackage {
+  id             String   @id @default(uuid())
+  lesson_id      String   @unique
+  lesson         Lesson   @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  file_path      String   @db.VarChar(500)
+  versi_manifest String   @default("1.2") @db.VarChar(50)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  scorm_progresses ScormProgress[]
+
+  @@map("scorm_packages")
+}
+
+model ScormProgress {
+  id               String       @id @default(uuid())
+  user_id          String
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  scorm_package_id String
+  scorm_package    ScormPackage @relation(fields: [scorm_package_id], references: [id], onDelete: Cascade)
+  status           ScormStatus  @default(not_attempted)
+  skor             Decimal?     @db.Decimal(5, 2)
+  waktu_belajar    Int          @default(0)
+  suspend_data     String?      @db.Text
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  @@unique([user_id, scorm_package_id])
+  @@index([user_id])
+  @@index([scorm_package_id])
+  @@map("scorm_progress")
+}
+
+model Assessment {
+  id          String   @id @default(uuid())
+  skillhub_id String
+  skillhub    SkillHub @relation(fields: [skillhub_id], references: [id], onDelete: Cascade)
+  judul       String   @db.VarChar(255)
+  tipe        String   @db.VarChar(50)
+  konfigurasi Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  attempts AssessmentAttempt[]
+
+  @@index([skillhub_id])
+  @@map("assessments")
+}
+
+model AssessmentAttempt {
+  id             String     @id @default(uuid())
+  user_id        String
+  user           User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  assessment_id  String
+  assessment     Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  skor           Decimal    @db.Decimal(5, 2)
+  status_lulus   Boolean    @default(false)
+  waktu_mulai    DateTime   @default(now())
+  waktu_selesai  DateTime?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  @@index([user_id])
+  @@index([assessment_id])
+  @@map("assessment_attempts")
+}
+
+model Enrollment {
+  id             String           @id @default(uuid())
+  user_id        String
+  user           User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  skillhub_id    String
+  skillhub       SkillHub         @relation(fields: [skillhub_id], references: [id], onDelete: Cascade)
+  tanggal_assign DateTime         @default(now())
+  status         EnrollmentStatus @default(enrolled)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+
+  @@unique([user_id, skillhub_id])
+  @@index([user_id])
+  @@index([skillhub_id])
+  @@map("enrollments")
+}
+
+model Certificate {
+  id               String            @id @default(uuid())
+  user_id          String
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  skillhub_id      String
+  skillhub         SkillHub          @relation(fields: [skillhub_id], references: [id], onDelete: Cascade)
+  nomor_sertifikat String            @unique @db.VarChar(100)
+  kode_verifikasi  String            @unique @db.VarChar(100)
+  tanggal_terbit   DateTime          @default(now())
+  status           CertificateStatus @default(active)
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  @@index([user_id])
+  @@index([skillhub_id])
+  @@index([kode_verifikasi])
+  @@map("certificates")
+}
+
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  actor_id    String?
+  actor       User?    @relation("ActivityActor", fields: [actor_id], references: [id], onDelete: SetNull)
+  actor_role  UserRole?
+  action      String   @db.VarChar(100)
+  entity_type String   @db.VarChar(80)
+  entity_id   String?  @db.VarChar(100)
+  description String   @db.Text
+  metadata    Json?
+  ip_address  String?  @db.VarChar(80)
+  user_agent  String?  @db.VarChar(255)
+  created_at  DateTime @default(now())
+
+  @@index([actor_id])
+  @@index([action])
+  @@index([entity_type])
+  @@index([created_at])
+  @@map("activity_logs")
+}
+
+
+model AppSetting {
+  key        String   @id @db.VarChar(100)
+  value      Json
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("app_settings")
+}
