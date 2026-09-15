@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import * as XLSX from "xlsx";
+import { readSheet } from "read-excel-file/node";
 import { Prisma, StatusAkses, UserRole } from "@prisma/client";
 
 import { getDefaultLearningWindow, getLearningAccess } from "../lib/access";
@@ -21,12 +21,12 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, callback) => {
-    if (/\.(csv|xlsx|xls)$/i.test(file.originalname)) {
+    if (/\.(csv|xlsx)$/i.test(file.originalname)) {
       callback(null, true);
       return;
     }
 
-    callback(new Error("Only CSV, XLSX, or XLS files are allowed."));
+    callback(new Error("Only CSV or XLSX files are allowed."));
   },
 });
 
@@ -79,21 +79,78 @@ function normalizeImportRow(row: Record<string, unknown>) {
   return normalized;
 }
 
-function parseImportRows(buffer: Buffer) {
-  const workbook = XLSX.read(buffer, { type: "buffer", raw: false });
-  const sheetName = workbook.SheetNames[0];
+function parseCsvRows(buffer: Buffer) {
+  const text = buffer.toString("utf8").replace(/^\uFEFF/, "");
+  const rows: string[][] = [];
+  let current = "";
+  let row: string[] = [];
+  let inQuotes = false;
 
-  if (!sheetName) {
-    return [];
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(current);
+      current = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") {
+        index += 1;
+      }
+      row.push(current);
+      if (row.some((cell) => cell.trim())) {
+        rows.push(row);
+      }
+      row = [];
+      current = "";
+      continue;
+    }
+
+    current += char;
   }
 
-  const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: "",
-    raw: false,
-  });
+  row.push(current);
+  if (row.some((cell) => cell.trim())) {
+    rows.push(row);
+  }
 
-  return rows.map(normalizeImportRow);
+  const [headers = [], ...records] = rows;
+  return records.map((record) =>
+    normalizeImportRow(
+      Object.fromEntries(headers.map((header, index) => [header, record[index] ?? ""])),
+    ),
+  );
+}
+
+async function parseImportRows(buffer: Buffer, filename: string) {
+  if (/\.csv$/i.test(filename)) {
+    return parseCsvRows(buffer);
+  }
+
+  const rows = (await readSheet(buffer)) as unknown[][];
+  const [headers = [], ...records] = rows;
+
+  return records
+    .map((record) =>
+      normalizeImportRow(
+        Object.fromEntries(headers.map((header, index) => [cleanCell(header), record[index] ?? ""])),
+      ),
+    )
+    .filter((row) => Object.values(row).some((value) => cleanCell(value)));
 }
 
 function isEmail(value: string | undefined): value is string {
@@ -194,7 +251,7 @@ router.post(
       return fail(res, 400, "Import file is required.");
     }
 
-    const rows = parseImportRows(req.file.buffer);
+    const rows = await parseImportRows(req.file.buffer, req.file.originalname);
 
     if (rows.length === 0) {
       return fail(res, 400, "Import file does not contain student rows.");
@@ -903,4 +960,7 @@ router.delete("/:id", requireRoles([UserRole.admin]), async (req, res) => {
 });
 
 export default router;
+
+
+
 
