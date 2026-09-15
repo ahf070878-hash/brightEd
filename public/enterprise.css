@@ -1626,3 +1626,96 @@ body:has(.profile-dialog[open]){overflow:hidden}
     width: min(260px, calc(100vw - 24px));
   }
 }
+
+/* Header icon polish: glossy 3D bell and 3D flag language selector. */
+.section-actions .notification-trigger.icon-only-action {
+  color: #f07722;
+  overflow: visible;
+}
+
+.notification-trigger.icon-only-action .ui-icon {
+  width: 31px !important;
+  height: 31px !important;
+  flex-basis: 31px !important;
+  fill: rgb(255 190 64 / 48%);
+  stroke: currentColor;
+  stroke-width: 2.15;
+  filter:
+    drop-shadow(-1px -1px 0 rgb(255 246 213 / 82%))
+    drop-shadow(0 2px 1px rgb(158 64 19 / 30%))
+    drop-shadow(0 8px 12px rgb(160 68 22 / 24%));
+  transform: perspective(90px) rotateX(12deg) rotateY(-7deg) translateY(0);
+}
+
+.notification-trigger.icon-only-action::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  top: 10px;
+  left: 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 72%);
+  filter: blur(.2px);
+  pointer-events: none;
+}
+
+.notification-trigger.icon-only-action:hover .ui-icon,
+.notification-menu[open] > .notification-trigger.icon-only-action .ui-icon {
+  color: #c6531d;
+  transform: perspective(90px) rotateX(7deg) rotateY(-5deg) translateY(-2px) scale(1.09);
+  filter:
+    drop-shadow(-1px -1px 0 rgb(255 247 220 / 90%))
+    drop-shadow(0 3px 2px rgb(158 64 19 / 34%))
+    drop-shadow(0 11px 15px rgb(160 68 22 / 30%));
+}
+
+.section-actions .flag-language-control,
+.top-actions .flag-language-control,
+.language-dropdown > summary {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.language-flag-option .language-flag,
+.flag-language-control .language-flag,
+.language-dropdown .language-flag {
+  width: 27px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: cover;
+  transform: perspective(80px) rotateX(9deg) rotateY(-9deg);
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 58%),
+    inset 0 -3px 5px rgb(0 0 0 / 16%),
+    0 5px 8px rgb(24 37 29 / 20%);
+  filter: saturate(1.14) contrast(1.03);
+  transition: transform var(--dur-fast), box-shadow var(--dur-fast), filter var(--dur-fast);
+}
+
+.language-flag-option:hover .language-flag,
+.language-flag-option.is-active .language-flag,
+.language-dropdown[open] .language-flag,
+.language-dropdown > summary:hover .language-flag {
+  transform: perspective(80px) rotateX(6deg) rotateY(-6deg) translateY(-1px) scale(1.06);
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 66%),
+    inset 0 -3px 5px rgb(0 0 0 / 17%),
+    0 8px 12px rgb(24 37 29 / 24%);
+  filter: saturate(1.2) contrast(1.05);
+}
+
+.language-flag-option {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+@media (max-width: 520px) {
+  .language-flag-option .language-flag,
+  .flag-language-control .language-flag,
+  .language-dropdown .language-flag {
+    width: 25px;
+    height: 17px;
+  }
+}
