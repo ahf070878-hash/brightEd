@@ -4747,13 +4747,17 @@ function findEnrollmentForSkillHub(skillhubId) {
   );
 }
 
-function renderLessonCards(skillhub, access) {
-  const lessons = (skillhub.courses ?? []).flatMap((course) =>
+function getSkillhubLessons(skillhub) {
+  return (skillhub.courses ?? []).flatMap((course) =>
     (course.lessons ?? []).map((lesson) => ({
       ...lesson,
       courseTitle: course.judul,
     })),
   );
+}
+
+function renderLessonCards(skillhub, access) {
+  const lessons = getSkillhubLessons(skillhub);
 
   if (lessons.length === 0) {
     return `<p class="muted-copy">Belum ada lesson di SkillHub ini.</p>`;
@@ -4786,6 +4790,53 @@ function renderLessonCards(skillhub, access) {
     .join("");
 }
 
+function getPrimaryLearningSkillHub() {
+  return studentState.skillhubs.find((skillhub) => {
+    const enrollment = findEnrollmentForSkillHub(skillhub.id);
+    return enrollment?.access?.canAccessLearningMaterial;
+  }) ?? studentState.skillhubs[0] ?? null;
+}
+
+function renderStudentLearningFocus() {
+  const skillhub = getPrimaryLearningSkillHub();
+
+  if (!skillhub) {
+    return `
+      <article class="workspace-card student-focus-card student-section tab-learning">
+        <p class="eyebrow">Learning</p>
+        <h3>Belum ada pembelajaran aktif</h3>
+        <p class="muted-copy">Admin belum meng-assign SkillHub ke akun ini.</p>
+      </article>
+    `;
+  }
+
+  const enrollment = findEnrollmentForSkillHub(skillhub.id);
+  const access = enrollment?.access;
+  const lessons = getSkillhubLessons(skillhub);
+  const nextLesson = lessons.find((lesson) => lesson.scorm_package) ?? lessons[0];
+  const attempts = getStudentAssessmentAttempts();
+  const passed = attempts.filter((attempt) => attempt.status_lulus).length;
+
+  return `
+    <article class="workspace-card student-focus-card student-section tab-learning">
+      <div>
+        <p class="eyebrow">Lanjutkan belajar</p>
+        <h3>${escapeHtml(skillhub.nama)}</h3>
+        <p>${escapeHtml(nextLesson?.judul ?? skillhub.deskripsi ?? "Materi BrightEd siap dibuka.")}</p>
+      </div>
+      <div class="student-focus-metrics">
+        <span><strong>${lessons.length}</strong> materi</span>
+        <span><strong>${passed}</strong> test lulus</span>
+        <span><strong>${formatDate(enrollment?.user?.masa_aktif_selesai)}</strong> akses sampai</span>
+      </div>
+      <div class="form-actions">
+        ${nextLesson?.scorm_package && access?.canAccessLearningMaterial ? `<button class="button button-primary" type="button" data-start-scorm="${escapeHtml(nextLesson.scorm_package.id)}">Mulai / resume materi</button>` : ""}
+        <button class="button button-ghost" type="button" data-student-tab="results">Lihat hasil test</button>
+      </div>
+    </article>
+  `;
+}
+
 function renderLearningCards() {
   if (studentState.skillhubs.length === 0) {
     return `
@@ -4803,14 +4854,15 @@ function renderLearningCards() {
       const accessLabel = access?.canAccessLearningMaterial
         ? "Materi aktif"
         : "Materi terkunci";
+      const lessons = getSkillhubLessons(skillhub);
 
       return `
-        <article class="workspace-card learning-card">
+        <article class="workspace-card learning-card compact-learning-card">
           <div class="learning-head">
             <div>
               <p class="eyebrow">${escapeHtml(enrollment?.status ?? "enrolled")}</p>
               <h3>${escapeHtml(skillhub.nama)}</h3>
-              <p>${escapeHtml(skillhub.deskripsi ?? "SkillHub BrightEd")}</p>
+              <p>${lessons.length} materi tersedia${skillhub.deskripsi ? ` · ${escapeHtml(skillhub.deskripsi)}` : ""}</p>
             </div>
             <span class="status-pill">${accessLabel}</span>
           </div>
@@ -4820,9 +4872,6 @@ function renderLearningCards() {
           </div>
           <div class="lesson-grid">
             ${renderLessonCards(skillhub, access)}
-          </div>
-          <div class="assessment-grid">
-            ${renderAssessmentCards(skillhub, access)}
           </div>
         </article>
       `;
@@ -4984,6 +5033,9 @@ function renderStudentResultsSection() {
           <tbody>${renderStudentResultRows()}</tbody>
         </table>
       </div>
+      <div class="assessment-grid student-assessment-list">
+        ${studentState.skillhubs.map((skillhub) => renderAssessmentCards(skillhub, findEnrollmentForSkillHub(skillhub.id)?.access)).join("")}
+      </div>
     </article>
   `;
 }
@@ -5030,6 +5082,8 @@ function renderStudentMarkup() {
   const activeLearning = studentState.enrollments.filter(
     (enrollment) => enrollment.access?.canAccessLearningMaterial,
   );
+  const attempts = getStudentAssessmentAttempts();
+  const passedAttempts = attempts.filter((attempt) => attempt.status_lulus).length;
 
   return `
     <div class="section-head admin-section-head">
@@ -5058,18 +5112,19 @@ function renderStudentMarkup() {
             <small>Bisa diakses saat ini</small>
           </article>
           <article class="stat-card">
-            <span>Sertifikat</span>
-            <strong>${studentState.certificates.length}</strong>
-            <small>Tetap terlihat setelah masa aktif habis</small>
+            <span>Hasil test</span>
+            <strong>${passedAttempts}/${attempts.length}</strong>
+            <small>Lulus dari total attempt</small>
           </article>
           <article class="stat-card">
-            <span>Status akun</span>
-            <strong>${escapeHtml(currentUser?.status_akses ?? "-")}</strong>
-            <small>${escapeHtml(currentUser?.email ?? "")}</small>
+            <span>Sertifikat</span>
+            <strong>${studentState.certificates.length}</strong>
+            <small>Siap diunduh kapan saja</small>
           </article>
         </div>
 
         <div class="data-grid">
+          ${renderStudentLearningFocus()}
           <article class="workspace-card scorm-player-card student-section tab-learning" data-scorm-player hidden>
             <div class="learning-head">
               <div>
