@@ -1719,3 +1719,39 @@ body:has(.profile-dialog[open]){overflow:hidden}
     height: 17px;
   }
 }
+
+/* Global profile initials: orange glossy 3D avatar for desktop and mobile. */
+.user-menu .avatar,
+.admin-section-head .user-menu .avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 31% 23%, rgb(255 255 255 / 86%) 0 13%, transparent 14%),
+    linear-gradient(145deg, #ffd77a 0%, #ff8a32 48%, #d84f1f 100%) !important;
+  color: #5b220c !important;
+  box-shadow:
+    inset 0 2px 3px rgb(255 255 255 / 74%),
+    inset 0 -5px 8px rgb(125 43 13 / 22%),
+    0 8px 15px rgb(178 73 22 / 24%);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .01em;
+  transform: perspective(80px) rotateX(10deg) rotateY(-5deg);
+  transition: transform var(--dur-fast), filter var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.user-menu summary:hover .avatar,
+.user-menu[open] summary .avatar,
+.admin-section-head .user-menu summary:hover .avatar,
+.admin-section-head .user-menu[open] summary .avatar {
+  transform: perspective(80px) rotateX(7deg) rotateY(-4deg) translateY(-2px) scale(1.06);
+  box-shadow:
+    inset 0 2px 3px rgb(255 255 255 / 82%),
+    inset 0 -5px 8px rgb(125 43 13 / 24%),
+    0 11px 19px rgb(178 73 22 / 30%);
+  filter: saturate(1.1);
+}
