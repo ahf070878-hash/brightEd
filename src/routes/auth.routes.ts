@@ -9,6 +9,7 @@ import type { ScopedRequest } from "../middlewares/rbac.middleware";
 import { prisma } from "../lib/prisma";
 import { getSecuritySettings } from "../lib/security-settings";
 import { sendPasswordResetEmail } from "../lib/mailer";
+import { recordActivity } from "../lib/activity-log";
 
 const router = Router();
 
@@ -54,6 +55,7 @@ router.post("/login", async (req, res) => {
       email?: string;
       password?: string;
     };
+    const normalizedEmail = email?.toLowerCase().trim() ?? "";
 
     if (!email || !password) {
       return res.status(400).json({
@@ -63,7 +65,7 @@ router.post("/login", async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         nama: true,
@@ -78,6 +80,15 @@ router.post("/login", async (req, res) => {
     });
 
     if (!user) {
+      await recordActivity(req, {
+        action: "auth.login_failed",
+        entityType: "auth",
+        description: `Login gagal untuk ${normalizedEmail || "email kosong"}.`,
+        metadata: {
+          email: normalizedEmail || null,
+          reason: "user_not_found",
+        } as Prisma.InputJsonValue,
+      });
       return res.status(401).json({
         success: false,
         message: "Invalid email or password.",
@@ -87,6 +98,17 @@ router.post("/login", async (req, res) => {
     const passwordMatches = await bcrypt.compare(password, user.password);
 
     if (!passwordMatches) {
+      await recordActivity(req, {
+        action: "auth.login_failed",
+        entityType: "user",
+        entityId: user.id,
+        description: `Login gagal untuk ${user.nama} (${user.email}).`,
+        metadata: {
+          email: user.email,
+          role: user.role,
+          reason: "invalid_password",
+        } as Prisma.InputJsonValue,
+      });
       return res.status(401).json({
         success: false,
         message: "Invalid email or password.",
@@ -95,6 +117,18 @@ router.post("/login", async (req, res) => {
 
     const token = await createToken(user);
     const { password: _password, ...safeUser } = user;
+
+    await recordActivity(Object.assign(req, { user: safeUser }) as ScopedRequest, {
+      action: "auth.login_success",
+      entityType: "user",
+      entityId: user.id,
+      description: `${user.nama} (${user.email}) berhasil login sebagai ${user.role}.`,
+      metadata: {
+        email: user.email,
+        role: user.role,
+        status_akses: user.status_akses,
+      } as Prisma.InputJsonValue,
+    });
 
     return res.json({
       success: true,
