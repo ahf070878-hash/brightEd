@@ -258,6 +258,7 @@ function logoutUser() {
   localStorage.removeItem("brighted_token");
   authToken = "";
   currentUser = null;
+  window.BrightEdCurrentUser = null;
   setAuthenticatedLayout(false);
   renderLoginForm();
   renderAdminDashboard(false);
@@ -498,6 +499,8 @@ function renderLoginForm(message = "Demo admin: admin@brighted.test / Admin12345
 }
 
 function renderSignedInState(user, access) {
+  window.BrightEdCurrentUser = user;
+  window.BrightEdContentProtection?.refresh?.();
   if (!loginPanel) {
     return;
   }
@@ -5780,6 +5783,8 @@ async function restoreSession() {
   } catch (error) {
     localStorage.removeItem("brighted_token");
     authToken = "";
+    currentUser = null;
+    window.BrightEdCurrentUser = null;
     setAuthenticatedLayout(false);
     renderLoginForm("Sesi lama habis. Silakan masuk lagi.");
   }
@@ -5844,4 +5849,6 @@ function renderExecutiveOverview() {
     <footer class="overview-footer"><span>BrightEd Akademi · Learning workspace</span><span>Dashboard berdasarkan data yang dimuat</span></footer>
   </section>`;
 }
+
+
 

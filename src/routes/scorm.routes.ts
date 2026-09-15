@@ -69,6 +69,32 @@ function normalizeZipPath(value: string) {
   return value.replace(/\\/g, "/").replace(/^\/+/, "");
 }
 
+const protectedHtmlExtensions = new Set([".html", ".htm", ".xhtml"]);
+
+function escapeInlineScriptJson(value: unknown) {
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+}
+
+function injectContentProtection(html: string, user?: User | null) {
+  const watermark = [user?.nama, user?.email].filter(Boolean).join(" · ") || "BrightEd LMS";
+  const payload = escapeInlineScriptJson({ watermark });
+  const protection = `
+<style data-brighted-content-protection>
+html,body{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}body{position:relative}body::after{content:attr(data-brighted-watermark);pointer-events:none;position:fixed;inset:0;z-index:2147483647;opacity:.085;color:#17211a;font:800 clamp(12px,2vw,22px)/6rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;transform:rotate(-18deg);transform-origin:50% 50%;background-image:repeating-linear-gradient(135deg,transparent 0 76px,rgb(255 108 33 / 14%) 78px 80px,transparent 82px 160px);mix-blend-mode:multiply}html[data-brighted-away] body>*{filter:blur(12px) saturate(.65)}[data-brighted-protection-notice]{position:fixed;left:50%;bottom:20px;z-index:2147483647;max-width:min(520px,calc(100vw - 32px));padding:12px 16px;border-radius:999px;background:#202b22;color:#fff8ec;box-shadow:0 18px 50px rgb(19 30 25 / 30%);font:700 13px system-ui,sans-serif;text-align:center;opacity:0;transform:translate(-50%,12px);transition:.18s ease;pointer-events:none}[data-brighted-protection-notice].is-visible{opacity:1;transform:translate(-50%,0)}@media print{body>*{visibility:hidden!important}body::before{content:"Materi BrightEd dilindungi dan tidak dapat dicetak.";visibility:visible!important;display:grid;place-items:center;position:fixed;inset:0;color:#1f261f;font:700 18px/1.4 system-ui,sans-serif}}
+</style>
+<script data-brighted-content-protection>
+(function(){const data=${payload};document.body?.setAttribute('data-brighted-watermark',data.watermark||'BrightEd LMS');let timer;function notice(){let n=document.querySelector('[data-brighted-protection-notice]');if(!n){n=document.createElement('div');n.setAttribute('data-brighted-protection-notice','');n.textContent='Materi belajar dilindungi. Menyalin, mencetak, screenshot, dan screen recording tidak diizinkan.';document.body.appendChild(n)}n.classList.add('is-visible');clearTimeout(timer);timer=setTimeout(()=>n.classList.remove('is-visible'),2600)}function block(e){e.preventDefault();e.stopPropagation();notice()}document.addEventListener('contextmenu',block,true);document.addEventListener('copy',block,true);document.addEventListener('cut',block,true);document.addEventListener('dragstart',block,true);document.addEventListener('selectstart',e=>e.preventDefault(),true);document.addEventListener('keydown',e=>{const k=String(e.key||'').toLowerCase();if(k==='printscreen'||((e.ctrlKey||e.metaKey)&&['p','s','u','c','x'].includes(k))||((e.ctrlKey||e.metaKey)&&e.shiftKey&&['i','j','c'].includes(k)))block(e)},true);document.addEventListener('visibilitychange',()=>document.documentElement.toggleAttribute('data-brighted-away',document.hidden));window.addEventListener('blur',()=>document.documentElement.setAttribute('data-brighted-away',''));window.addEventListener('focus',()=>document.documentElement.removeAttribute('data-brighted-away'));window.addEventListener('beforeprint',block);document.querySelectorAll('video').forEach(v=>{v.setAttribute('controlsList','nodownload noplaybackrate noremoteplayback');v.setAttribute('disablePictureInPicture','');v.setAttribute('oncontextmenu','return false')});if(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia){navigator.mediaDevices.getDisplayMedia=function(){notice();return Promise.reject(new DOMException('Screen recording is disabled for BrightEd learning content.','NotAllowedError'))}}})();
+</script>`;
+
+  if (html.includes("data-brighted-content-protection")) {
+    return html;
+  }
+  if (/<\/head>/i.test(html)) {
+    return html.replace(/<\/head>/i, `${protection}</head>`);
+  }
+  return `${protection}${html}`;
+}
+
 function parseManifest(zip: AdmZip): ManifestMetadata | undefined {
   const manifestEntry = zip
     .getEntries()
@@ -577,6 +603,11 @@ router.get(
     }
 
     res.setHeader("Cache-Control", "private, no-store");
+    if (protectedHtmlExtensions.has(path.extname(filePath).toLowerCase())) {
+      const html = await readFile(filePath, "utf8");
+      res.type("html");
+      return res.send(injectContentProtection(html, accessCheck.user));
+    }
     return res.sendFile(filePath);
   },
 );
@@ -880,3 +911,4 @@ router.get(
 );
 
 export default router;
+

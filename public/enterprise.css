@@ -1755,3 +1755,91 @@ body:has(.profile-dialog[open]){overflow:hidden}
     0 11px 19px rgb(178 73 22 / 30%);
   filter: saturate(1.1);
 }
+
+/* Learning content protection: deterrent controls for enrolled material views. */
+[data-content-protected] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+[data-content-protected]::after {
+  content: attr(data-watermark);
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  opacity: .075;
+  color: #1f261f;
+  font-size: clamp(13px, 2vw, 22px);
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 6rem;
+  text-transform: uppercase;
+  transform: rotate(-18deg);
+  transform-origin: 50% 50%;
+  background-image: repeating-linear-gradient(135deg, transparent 0 76px, rgb(255 108 33 / 12%) 78px 80px, transparent 82px 160px);
+  mix-blend-mode: multiply;
+}
+
+.student-learning-list,
+.student-focus-card,
+.lesson-card,
+.scorm-player-card,
+[data-scorm-player] {
+  position: relative;
+}
+
+.scorm-player-card iframe,
+.lesson-card iframe,
+.lesson-card video {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-content-away] [data-content-protected] {
+  filter: blur(12px) saturate(.65);
+  transition: filter .16s ease;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  body::before {
+    content: "Materi BrightEd dilindungi dan tidak dapat dicetak.";
+    visibility: visible !important;
+    display: grid;
+    place-items: center;
+    position: fixed;
+    inset: 0;
+    color: #1f261f;
+    font: 700 18px/1.4 system-ui, sans-serif;
+  }
+}
+
+[data-content-protection-notice] {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 99999;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border: 1px solid rgb(255 135 45 / 35%);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f261f, #314235);
+  color: #fff8ec;
+  box-shadow: 0 18px 50px rgb(19 30 25 / 30%);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 14px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+[data-content-protection-notice].is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
