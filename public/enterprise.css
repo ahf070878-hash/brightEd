@@ -1515,3 +1515,53 @@ body:has(.profile-dialog[open]){overflow:hidden}
     justify-content: flex-end !important;
   }
 }
+
+/* Notification action: 3D bell icon without a surrounding frame. */
+.section-actions .notification-trigger.icon-only-action {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #d46a22;
+}
+
+.notification-menu[open] > summary.notification-trigger.icon-only-action,
+.section-actions .notification-trigger.icon-only-action:hover {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.notification-trigger.icon-only-action .ui-icon {
+  width: 28px !important;
+  height: 28px !important;
+  flex-basis: 28px !important;
+  fill: rgb(255 177 74 / 30%);
+  stroke: currentColor;
+  stroke-width: 2.05;
+  filter:
+    drop-shadow(0 1px 0 rgb(255 255 255 / 84%))
+    drop-shadow(0 3px 2px rgb(95 48 20 / 28%))
+    drop-shadow(0 8px 11px rgb(152 69 25 / 22%));
+  transform: perspective(80px) rotateX(10deg) translateY(0);
+  transition: transform var(--dur-fast), color var(--dur-fast), filter var(--dur-fast);
+}
+
+.notification-trigger.icon-only-action:hover .ui-icon,
+.notification-menu[open] > .notification-trigger.icon-only-action .ui-icon {
+  color: #b94e1e;
+  transform: perspective(80px) rotateX(7deg) translateY(-2px) scale(1.08);
+  filter:
+    drop-shadow(0 1px 0 rgb(255 255 255 / 88%))
+    drop-shadow(0 4px 2px rgb(95 48 20 / 32%))
+    drop-shadow(0 10px 14px rgb(152 69 25 / 28%));
+}
+
+@media (max-width: 420px) {
+  .section-actions .notification-trigger.icon-only-action .ui-icon {
+    display: block !important;
+  }
+}

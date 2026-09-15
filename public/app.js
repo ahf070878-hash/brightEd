@@ -848,7 +848,7 @@ function renderNotificationDropdown() {
   return `
     <details class="notification-menu">
       <summary class="button button-ghost notification-trigger icon-only-action" aria-label="Notifikasi">
-        ${renderNavIcon("audit")}
+        ${renderNavIcon("bell")}
         <span class="sr-only">Notifikasi</span>
         ${unreadCount ? `<strong>${escapeHtml(countLabel)}</strong>` : ""}
       </summary>
@@ -5800,6 +5800,7 @@ function renderNavIcon(name) {
     certificates: '<circle cx="12" cy="9" r="6"/><path d="m8 14-2 7 6-3 6 3-2-7"/>',
     reports: '<path d="M4 3v17h17M8 16v-5m5 5V6m5 10V9"/>',
     audit: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    bell: '<path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21a2 2 0 0 0 4 0"/><path d="M9 4a3 3 0 0 1 6 0"/>',
     settings: '<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/>',
     profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     enrollments: '<path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/>',
