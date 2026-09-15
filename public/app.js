@@ -98,6 +98,16 @@ const DEFAULT_PERMISSIONS = {
   audit: { admin: true, fasilitator: false, pengawas: false, peserta: false },
   settings: { admin: true, fasilitator: false, pengawas: false, peserta: false },
 };
+const DEFAULT_CERTIFICATE_TEXT_CONFIG = {
+  name: { x: 50, y: 52, size: 120, color: "#1A1A2E", weight: "bold", align: "center" },
+  title: { x: 50, y: 63, size: 70, color: "#333366", weight: "bold", align: "center" },
+  date: { x: 50, y: 73, size: 55, color: "#666666", weight: "normal", align: "center" },
+};
+const CERTIFICATE_TEXT_FIELDS = [
+  ["name", "Nama peserta", "Budi Santoso"],
+  ["title", "Judul SkillHub", "Pelatihan K3 Maritim"],
+  ["date", "Tanggal", "15 September 2026"],
+];
 const DEFAULT_CERTIFICATE_SETTINGS = {
   title: "BrightEd Akademi",
   subtitle: "Sertifikat Penyelesaian",
@@ -106,6 +116,7 @@ const DEFAULT_CERTIFICATE_SETTINGS = {
   completion_label: "Tanggal Selesai",
   date_source: "certificate_date",
   asset_path: null,
+  text_config: DEFAULT_CERTIFICATE_TEXT_CONFIG,
 };
 let activeAdminTab = "overview";
 let activeSettingTab = "summary";
@@ -604,12 +615,47 @@ function normalizePermissionMatrix(matrix = {}) {
   return normalized;
 }
 
+function clampNumber(value, fallback, min, max) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return fallback;
+  }
+  return Math.min(Math.max(numeric, min), max);
+}
+
+function normalizeCertificateTextField(field = {}, fallback) {
+  const align = ["left", "center", "right"].includes(field?.align) ? field.align : fallback.align;
+  const color = typeof field?.color === "string" && /^#[0-9a-f]{6}$/i.test(field.color)
+    ? field.color
+    : fallback.color;
+
+  return {
+    x: clampNumber(field?.x, fallback.x, 0, 100),
+    y: clampNumber(field?.y, fallback.y, 0, 100),
+    size: clampNumber(field?.size, fallback.size, 1, 150),
+    color,
+    weight: field?.weight === "bold" || field?.weight === "normal" ? field.weight : fallback.weight,
+    align,
+  };
+}
+
+function normalizeCertificateTextConfig(config = {}) {
+  const source = config && typeof config === "object" ? config : {};
+  return {
+    name: normalizeCertificateTextField(source.name, DEFAULT_CERTIFICATE_TEXT_CONFIG.name),
+    title: normalizeCertificateTextField(source.title ?? source.course, DEFAULT_CERTIFICATE_TEXT_CONFIG.title),
+    date: normalizeCertificateTextField(source.date, DEFAULT_CERTIFICATE_TEXT_CONFIG.date),
+  };
+}
+
 function normalizeCertificateSettings(settings = {}) {
+  const source = settings && typeof settings === "object" ? settings : {};
   return {
     ...DEFAULT_CERTIFICATE_SETTINGS,
-    ...(settings && typeof settings === "object" ? settings : {}),
-    date_source: settings?.date_source === "membership_end" ? "membership_end" : "certificate_date",
-    asset_path: settings?.asset_path || null,
+    ...source,
+    date_source: source?.date_source === "membership_end" ? "membership_end" : "certificate_date",
+    asset_path: source?.asset_path || null,
+    text_config: normalizeCertificateTextConfig(source?.text_config),
   };
 }
 
@@ -2593,49 +2639,160 @@ function renderSettingsSidebarSubmenu() {
   `;
 }
 
+function renderCertificateFieldPreview(fieldKey, label, sample, config) {
+  const field = config[fieldKey];
+  const transform = field.align === "center"
+    ? "translate(-50%, -50%)"
+    : field.align === "right"
+      ? "translate(-100%, -50%)"
+      : "translateY(-50%)";
+
+  return `
+    <span
+      class="certificate-overlay-text"
+      data-certificate-preview-field="${escapeHtml(fieldKey)}"
+      style="left:${field.x}%;top:${field.y}%;--certificate-field-size:${field.size};color:${escapeHtml(field.color)};font-weight:${escapeHtml(field.weight)};text-align:${escapeHtml(field.align)};transform:${transform};"
+      title="${escapeHtml(label)}"
+    >${escapeHtml(sample)}</span>
+  `;
+}
+
+function renderCertificateFieldControls(fieldKey, label, config) {
+  const field = config[fieldKey];
+
+  return `
+    <article class="certificate-field-control" data-certificate-field-control="${escapeHtml(fieldKey)}">
+      <div>
+        <strong>${escapeHtml(label)}</strong>
+        <span>Atur posisi dan gaya teks di atas template.</span>
+      </div>
+      <div class="certificate-control-grid">
+        <label>Kiri (%) <input name="${fieldKey}.x" type="number" min="0" max="100" step="0.5" value="${escapeHtml(field.x)}" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="x" /></label>
+        <label>Atas (%) <input name="${fieldKey}.y" type="number" min="0" max="100" step="0.5" value="${escapeHtml(field.y)}" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="y" /></label>
+        <label>Ukuran (%) <input name="${fieldKey}.size" type="number" min="1" max="150" step="1" value="${escapeHtml(field.size)}" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="size" /></label>
+        <label>Warna <input name="${fieldKey}.color" type="color" value="${escapeHtml(field.color)}" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="color" /></label>
+        <label>Ketebalan
+          <select name="${fieldKey}.weight" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="weight">
+            <option value="normal" ${field.weight === "normal" ? "selected" : ""}>Normal</option>
+            <option value="bold" ${field.weight === "bold" ? "selected" : ""}>Tebal</option>
+          </select>
+        </label>
+        <label>Perataan
+          <select name="${fieldKey}.align" data-certificate-config-field="${escapeHtml(fieldKey)}" data-certificate-config-key="align">
+            <option value="left" ${field.align === "left" ? "selected" : ""}>Kiri</option>
+            <option value="center" ${field.align === "center" ? "selected" : ""}>Tengah</option>
+            <option value="right" ${field.align === "right" ? "selected" : ""}>Kanan</option>
+          </select>
+        </label>
+      </div>
+    </article>
+  `;
+}
+
 function renderCertificateSettingsPanel() {
   const settings = normalizeCertificateSettings(dashboardState.certificateSettings);
+  const textConfig = normalizeCertificateTextConfig(settings.text_config);
 
   return `
     <section class="settings-certificate-card" ${activeSettingTab === "certificate" ? "" : "hidden"}>
       <div class="card-head">
         <div>
           <p class="eyebrow">Setting Sertifikat</p>
-          <h3>Upload dan field dinamis</h3>
-          <p>Atur teks yang muncul di PDF sertifikat untuk nama, materi, dan tanggal selesai.</p>
+          <h3>Template dan penempatan teks dinamis</h3>
+          <p>Upload template landscape, lalu atur posisi nama peserta, judul SkillHub, dan tanggal seperti editor sertifikat IZI Learning.</p>
         </div>
       </div>
-      <div class="certificate-settings-grid">
-        <form data-update-certificate-settings>
-          <label>Nama institusi / judul <input name="title" value="${escapeHtml(settings.title)}" required /></label>
-          <label>Nama dokumen <input name="subtitle" value="${escapeHtml(settings.subtitle)}" required /></label>
-          <label>Label nama peserta <input name="recipient_label" value="${escapeHtml(settings.recipient_label)}" required /></label>
-          <label>Label materi <input name="material_label" value="${escapeHtml(settings.material_label)}" required /></label>
-          <label>Label tanggal selesai <input name="completion_label" value="${escapeHtml(settings.completion_label)}" required /></label>
-          <label>
-            Sumber tanggal selesai
-            <select name="date_source">
-              <option value="certificate_date" ${settings.date_source === "certificate_date" ? "selected" : ""}>Tanggal sertifikat dibuat</option>
-              <option value="membership_end" ${settings.date_source === "membership_end" ? "selected" : ""}>Tanggal masa aktif siswa selesai</option>
-            </select>
-          </label>
-          <input name="asset_path" type="hidden" value="${escapeHtml(settings.asset_path ?? "")}" />
-          <button class="button button-primary" type="submit">Simpan setting sertifikat</button>
-        </form>
-        <div class="certificate-upload-panel">
-          <form data-upload-certificate-asset>
-            <label>Upload gambar/header sertifikat <input name="file" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" required /></label>
-            <p class="form-help">Format PNG/JPG, maksimal 5 MB. Gambar akan tampil di bagian kiri atas PDF sertifikat.</p>
-            <button class="button button-secondary" type="submit">Upload asset</button>
-          </form>
-          <div class="certificate-preview-card">
-            <span>Preview asset</span>
-            ${settings.asset_path ? `<img src="${escapeHtml(settings.asset_path)}" alt="Asset sertifikat" />` : `<strong>Belum ada upload</strong>`}
+      <div class="certificate-template-editor">
+        <div class="certificate-template-preview-panel">
+          <div class="certificate-template-toolbar">
+            <div>
+              <strong>Preview template</strong>
+              <span>Contoh data hanya untuk mengatur posisi. PDF asli memakai data sertifikat.</span>
+            </div>
           </div>
+          <div class="certificate-canvas" data-certificate-preview>
+            <div class="certificate-template-fallback" aria-hidden="true"></div>
+            ${settings.asset_path ? `<img class="certificate-template-image" src="${escapeHtml(settings.asset_path)}" alt="Template sertifikat" />` : ""}
+            ${CERTIFICATE_TEXT_FIELDS.map(([fieldKey, label, sample]) => renderCertificateFieldPreview(fieldKey, label, sample, textConfig)).join("")}
+          </div>
+          <form data-upload-certificate-asset class="certificate-upload-form">
+            <label>Upload template sertifikat <input name="file" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" required /></label>
+            <p class="form-help">Gunakan PNG/JPG landscape minimal 1200px. Gambar menjadi background penuh PDF sertifikat.</p>
+            <button class="button button-secondary" type="submit">Upload template</button>
+          </form>
         </div>
+
+        <form data-update-certificate-settings class="certificate-template-config">
+          <input name="asset_path" type="hidden" value="${escapeHtml(settings.asset_path ?? "")}" />
+          <div class="certificate-copy-settings">
+            <label>Nama institusi <input name="title" value="${escapeHtml(settings.title)}" required /></label>
+            <label>Nama dokumen <input name="subtitle" value="${escapeHtml(settings.subtitle)}" required /></label>
+            <label>Label nama peserta <input name="recipient_label" value="${escapeHtml(settings.recipient_label)}" required /></label>
+            <label>Label materi <input name="material_label" value="${escapeHtml(settings.material_label)}" required /></label>
+            <label>Label tanggal <input name="completion_label" value="${escapeHtml(settings.completion_label)}" required /></label>
+            <label>
+              Sumber tanggal
+              <select name="date_source">
+                <option value="certificate_date" ${settings.date_source === "certificate_date" ? "selected" : ""}>Tanggal sertifikat dibuat</option>
+                <option value="membership_end" ${settings.date_source === "membership_end" ? "selected" : ""}>Tanggal masa aktif siswa selesai</option>
+              </select>
+            </label>
+          </div>
+          <div class="certificate-field-settings">
+            ${CERTIFICATE_TEXT_FIELDS.map(([fieldKey, label]) => renderCertificateFieldControls(fieldKey, label, textConfig)).join("")}
+          </div>
+          <div class="form-actions">
+            <button class="button button-ghost" type="button" data-reset-certificate-layout>Reset posisi default</button>
+            <button class="button button-primary" type="submit">Simpan setting sertifikat</button>
+          </div>
+        </form>
       </div>
     </section>
   `;
+}
+
+
+function buildCertificateTextConfigFromForm(formData) {
+  return Object.fromEntries(
+    CERTIFICATE_TEXT_FIELDS.map(([fieldKey]) => {
+      const fallback = DEFAULT_CERTIFICATE_TEXT_CONFIG[fieldKey];
+      const field = {
+        x: clampNumber(formData.get(`${fieldKey}.x`), fallback.x, 0, 100),
+        y: clampNumber(formData.get(`${fieldKey}.y`), fallback.y, 0, 100),
+        size: clampNumber(formData.get(`${fieldKey}.size`), fallback.size, 1, 150),
+        color: formData.get(`${fieldKey}.color`) || fallback.color,
+        weight: formData.get(`${fieldKey}.weight`) === "bold" ? "bold" : "normal",
+        align: ["left", "center", "right"].includes(formData.get(`${fieldKey}.align`))
+          ? formData.get(`${fieldKey}.align`)
+          : fallback.align,
+      };
+      return [fieldKey, normalizeCertificateTextField(field, fallback)];
+    }),
+  );
+}
+
+function updateCertificatePreviewField(input) {
+  const fieldKey = input.getAttribute("data-certificate-config-field");
+  const key = input.getAttribute("data-certificate-config-key");
+  const preview = adminDashboard?.querySelector(`[data-certificate-preview-field="${fieldKey}"]`);
+
+  if (!fieldKey || !key || !preview) {
+    return;
+  }
+
+  if (key === "x") preview.style.left = `${clampNumber(input.value, 50, 0, 100)}%`;
+  if (key === "y") preview.style.top = `${clampNumber(input.value, 50, 0, 100)}%`;
+  if (key === "size") preview.style.setProperty("--certificate-field-size", String(clampNumber(input.value, 70, 1, 150)));
+  if (key === "color") preview.style.color = input.value;
+  if (key === "weight") preview.style.fontWeight = input.value === "bold" ? "bold" : "normal";
+  if (key === "align") {
+    preview.style.textAlign = input.value;
+    preview.style.transform = input.value === "center"
+      ? "translate(-50%, -50%)"
+      : input.value === "right"
+        ? "translate(-100%, -50%)"
+        : "translateY(-50%)";
+  }
 }
 
 function renderSettingsSummaryPanel(activeStudents, archivedSchools, publishedSkillhubs, appUsers) {
@@ -3959,6 +4116,7 @@ async function submitAndRefresh(event, submitter) {
           completion_label: formData.get("completion_label"),
           date_source: formData.get("date_source"),
           asset_path: formData.get("asset_path") || null,
+          text_config: buildCertificateTextConfigFromForm(formData),
         }),
       });
       dashboardState.certificateSettings = normalizeCertificateSettings(result.settings);
@@ -4393,6 +4551,21 @@ function bindAdminDashboardEvents() {
       activeAdminTab = "settings";
       rerenderAdminDashboardFromState();
     });
+  });
+
+  adminDashboard?.querySelectorAll("[data-certificate-config-field]").forEach((input) => {
+    input.addEventListener("input", () => updateCertificatePreviewField(input));
+    input.addEventListener("change", () => updateCertificatePreviewField(input));
+  });
+
+  adminDashboard?.querySelector("[data-reset-certificate-layout]")?.addEventListener("click", () => {
+    dashboardState.certificateSettings = normalizeCertificateSettings({
+      ...dashboardState.certificateSettings,
+      text_config: DEFAULT_CERTIFICATE_TEXT_CONFIG,
+    });
+    activeAdminTab = "settings";
+    activeSettingTab = "certificate";
+    rerenderAdminDashboardFromState();
   });
 
   bindSortAndPaginationEvents();
@@ -5615,3 +5788,4 @@ function renderExecutiveOverview() {
     <footer class="overview-footer"><span>BrightEd Akademi · Learning workspace</span><span>Dashboard berdasarkan data yang dimuat</span></footer>
   </section>`;
 }
+

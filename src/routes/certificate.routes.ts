@@ -7,7 +7,7 @@ import { Router } from "express";
 
 import { recordActivity } from "../lib/activity-log";
 import { hasPassedCertificateRequirements } from "../lib/certificate-eligibility";
-import { getCertificateSettings } from "../lib/certificate-settings";
+import { CertificateTextFieldConfig, getCertificateSettings } from "../lib/certificate-settings";
 import { fail, getRequiredParam, ok } from "../lib/http";
 import { prisma } from "../lib/prisma";
 import {
@@ -57,6 +57,52 @@ function generateVerificationCode() {
   return randomBytes(16).toString("hex");
 }
 
+function formatCertificateDate(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(date);
+}
+
+function drawTemplateBackground(doc: PDFKit.PDFDocument, assetPath: string) {
+  try {
+    doc.image(assetPath, 0, 0, {
+      width: doc.page.width,
+      height: doc.page.height,
+    });
+  } catch (error) {
+    console.error("Failed to render certificate template background", error);
+  }
+}
+
+function drawPositionedText(
+  doc: PDFKit.PDFDocument,
+  text: string,
+  field: CertificateTextFieldConfig,
+) {
+  const fontSize = Math.max(8, doc.page.width * field.size * 0.00045);
+  const anchorX = doc.page.width * (field.x / 100);
+  const anchorY = doc.page.height * (field.y / 100);
+  const boxWidth = doc.page.width * 0.9;
+  const textX = field.align === "center"
+    ? anchorX - boxWidth / 2
+    : field.align === "right"
+      ? anchorX - boxWidth
+      : anchorX;
+
+  doc
+    .font(field.weight === "bold" ? "Helvetica-Bold" : "Helvetica")
+    .fontSize(fontSize)
+    .fillColor(field.color)
+    .text(text, textX, anchorY - fontSize / 2, {
+      width: boxWidth,
+      align: field.align,
+      lineGap: 0,
+    });
+}
+
 async function streamCertificatePdf(
   res: Parameters<Parameters<typeof router.get>[1]>[1],
   certificate: Prisma.CertificateGetPayload<{ include: typeof certificateInclude }>,
@@ -79,73 +125,63 @@ async function streamCertificatePdf(
   const completionDate = settings.date_source === "membership_end"
     ? certificate.user.masa_aktif_selesai ?? certificate.tanggal_terbit
     : certificate.tanggal_terbit;
+  const formattedDate = formatCertificateDate(completionDate);
+  const publicDir = path.join(process.cwd(), "public");
+  const certificateUploadDir = path.join(publicDir, "uploads", "certificates");
   const assetPath = settings.asset_path
-    ? path.join(process.cwd(), "public", settings.asset_path.replace(/^\//, ""))
+    ? path.join(publicDir, settings.asset_path.replace(/^\//, ""))
     : null;
+  const hasTemplate = Boolean(
+    assetPath
+      && assetPath.startsWith(certificateUploadDir)
+      && fs.existsSync(assetPath),
+  );
 
-  if (assetPath && assetPath.startsWith(path.join(process.cwd(), "public", "uploads", "certificates")) && fs.existsSync(assetPath)) {
-    try {
-      doc.image(assetPath, 56, 46, { fit: [120, 68], align: "center" });
-    } catch (error) {
-      console.error("Failed to render certificate asset", error);
-    }
+  if (hasTemplate && assetPath) {
+    drawTemplateBackground(doc, assetPath);
+  } else {
+    doc
+      .rect(28, 28, doc.page.width - 56, doc.page.height - 56)
+      .lineWidth(2)
+      .stroke("#F3702A");
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(28)
+      .fillColor("#F3702A")
+      .text(settings.title, { align: "center" });
+
+    doc.moveDown(0.8);
+    doc
+      .font("Helvetica")
+      .fontSize(16)
+      .fillColor("#22302A")
+      .text(settings.subtitle, { align: "center" });
+
+    doc
+      .fontSize(12)
+      .fillColor("#5B6B61")
+      .text(settings.recipient_label, 56, doc.page.height * 0.43, { align: "center" })
+      .text(settings.material_label, 56, doc.page.height * 0.57, { align: "center" })
+      .text(settings.completion_label, 56, doc.page.height * 0.68, { align: "center" });
   }
 
-  doc
-    .rect(28, 28, doc.page.width - 56, doc.page.height - 56)
-    .lineWidth(2)
-    .stroke("#F3702A");
+  drawPositionedText(doc, certificate.user.nama, settings.text_config.name);
+  drawPositionedText(doc, certificate.skillhub.nama, settings.text_config.title);
+  drawPositionedText(doc, formattedDate, settings.text_config.date);
 
   doc
-    .fontSize(28)
-    .fillColor("#F3702A")
-    .text(settings.title, { align: "center" });
-
-  doc.moveDown(0.8);
-  doc
-    .fontSize(16)
-    .fillColor("#22302A")
-    .text(settings.subtitle, { align: "center" });
-
-  doc.moveDown(1.4);
-  doc
-    .fontSize(12)
+    .font("Helvetica")
+    .fontSize(9)
     .fillColor("#5B6B61")
-    .text(settings.recipient_label, { align: "center" });
-
-  doc.moveDown(0.4);
-  doc
-    .fontSize(32)
-    .fillColor("#22302A")
-    .text(certificate.user.nama, { align: "center" });
-
-  doc.moveDown(0.8);
-  doc
-    .fontSize(13)
-    .fillColor("#5B6B61")
-    .text(settings.material_label, { align: "center" });
-
-  doc.moveDown(0.3);
-  doc
-    .fontSize(22)
-    .fillColor("#22302A")
-    .text(certificate.skillhub.nama, { align: "center" });
-
-  doc.moveDown(1.8);
-  doc
-    .fontSize(10)
-    .fillColor("#5B6B61")
-    .text(`Nomor Sertifikat: ${certificate.nomor_sertifikat}`, {
+    .text(`Nomor Sertifikat: ${certificate.nomor_sertifikat}`, 56, doc.page.height - 84, {
       align: "center",
+      width: doc.page.width - 112,
     })
-    .text(`Kode Verifikasi: ${certificate.kode_verifikasi}`, {
+    .text(`Kode Verifikasi: ${certificate.kode_verifikasi}`, 56, doc.page.height - 68, {
       align: "center",
-    })
-    .text(
-      `${settings.completion_label}: ${completionDate.toISOString().slice(0, 10)}`,
-      { align: "center" },
-    );
-
+      width: doc.page.width - 112,
+    });
   doc.end();
 }
 
