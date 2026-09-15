@@ -837,6 +837,7 @@ function renderTabButton(tab, activeTab, attribute, label, count = "") {
       class="tab-button ${activeTab === tab ? "is-active" : ""}"
       type="button"
       ${attribute}="${escapeHtml(tab)}"
+      data-mobile-nav-icon="${escapeHtml(tab)}"
       aria-pressed="${activeTab === tab}"
       aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"
     >
