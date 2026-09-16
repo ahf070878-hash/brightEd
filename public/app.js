@@ -4800,7 +4800,13 @@ function renderLessonCards(skillhub, access) {
     .map((lesson) => {
       const hasScorm = Boolean(lesson.scorm_package);
       const disabled = !hasScorm || !access?.canAccessLearningMaterial;
-      const buttonLabel = hasScorm ? "Mulai / resume SCORM" : "Belum ada SCORM";
+      const isVideo = lesson.tipe_konten === "video";
+      const buttonLabel = hasScorm
+        ? isVideo
+          ? "Tonton video"
+          : "Mulai / resume materi"
+        : "Belum ada materi";
+      const actionAttribute = isVideo ? "data-open-video-material" : "data-start-scorm";
 
       return `
         <article class="lesson-card">
@@ -4812,7 +4818,7 @@ function renderLessonCards(skillhub, access) {
           <button
             class="button button-secondary"
             type="button"
-            data-start-scorm="${escapeHtml(lesson.scorm_package?.id ?? "")}"
+            ${actionAttribute}="${escapeHtml(lesson.scorm_package?.id ?? "")}"
             ${disabled ? "disabled" : ""}
           >
             ${buttonLabel}
@@ -5158,6 +5164,28 @@ function renderStudentMarkup() {
 
         <div class="data-grid">
           ${renderStudentLearningFocus()}
+          <dialog class="video-material-dialog" data-video-material-dialog aria-label="Video materi">
+            <article class="video-material-window" data-video-material-window>
+              <div class="video-material-head">
+                <div>
+                  <p class="eyebrow">Video training</p>
+                  <h3 data-video-material-title>Memuat video...</h3>
+                </div>
+                <button class="button button-ghost" type="button" data-close-video-material>Tutup</button>
+              </div>
+              <iframe
+                title="Video training"
+                data-video-material-frame
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+              ></iframe>
+              <div class="video-heartbeat-bar">
+                <span data-video-heartbeat-status>Heartbeat aktif</span>
+                <button class="button button-secondary" type="button" data-video-heartbeat>Video masih ditonton</button>
+              </div>
+            </article>
+          </dialog>
           <article class="workspace-card scorm-player-card student-section tab-learning" data-scorm-player hidden>
             <div class="learning-head">
               <div>
@@ -5197,6 +5225,72 @@ function renderStudentMarkup() {
       </div>
     </div>
   `;
+}
+
+let videoHeartbeatTimer = null;
+let videoLastHeartbeatAt = 0;
+
+function closeVideoMaterialDialog() {
+  const dialog = adminDashboard?.querySelector("[data-video-material-dialog]");
+  const frame = adminDashboard?.querySelector("[data-video-material-frame]");
+
+  if (videoHeartbeatTimer) {
+    window.clearInterval(videoHeartbeatTimer);
+    videoHeartbeatTimer = null;
+  }
+  if (frame) {
+    frame.src = "about:blank";
+  }
+  dialog?.close?.();
+}
+
+function pulseVideoHeartbeat() {
+  videoLastHeartbeatAt = Date.now();
+  const status = adminDashboard?.querySelector("[data-video-heartbeat-status]");
+  if (status) {
+    status.textContent = "Heartbeat aktif · video tetap berjalan";
+  }
+}
+
+async function openVideoMaterial(scormPackageId, trigger) {
+  const dialog = adminDashboard?.querySelector("[data-video-material-dialog]");
+  const frame = adminDashboard?.querySelector("[data-video-material-frame]");
+  const title = adminDashboard?.querySelector("[data-video-material-title]");
+  const status = adminDashboard?.querySelector("[data-video-heartbeat-status]");
+
+  if (!dialog || !frame || !title || !scormPackageId) {
+    return;
+  }
+
+  try {
+    if (trigger) trigger.disabled = true;
+    const launch = await apiRequest(
+      `/api/scorm/${encodeURIComponent(scormPackageId)}/launch?token=${encodeURIComponent(authToken)}`,
+    );
+    title.textContent = launch.scorm_package?.lesson?.judul ?? "Video training";
+    frame.src = launch.launch_url;
+    dialog.showModal();
+    pulseVideoHeartbeat();
+    if (status) {
+      status.textContent = "Heartbeat aktif · klik tombol heartbeat bila video ingin terus berjalan";
+    }
+    if (videoHeartbeatTimer) {
+      window.clearInterval(videoHeartbeatTimer);
+    }
+    videoHeartbeatTimer = window.setInterval(() => {
+      const elapsed = Date.now() - videoLastHeartbeatAt;
+      if (elapsed > 90_000) {
+        closeVideoMaterialDialog();
+        setDashboardMessage("Video dipause karena heartbeat tidak aktif.", "info");
+      } else if (status) {
+        status.textContent = `Heartbeat aktif · ${Math.max(1, Math.ceil((90_000 - elapsed) / 1000))} detik tersisa`;
+      }
+    }, 10_000);
+  } catch (error) {
+    setDashboardMessage(getErrorMessage(error), "error");
+  } finally {
+    if (trigger) trigger.disabled = false;
+  }
 }
 
 function bindStudentDashboardEvents() {
@@ -5250,6 +5344,32 @@ function bindStudentDashboardEvents() {
       }
     });
   });
+
+  adminDashboard?.querySelectorAll("[data-open-video-material]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openVideoMaterial(button.getAttribute("data-open-video-material"), button);
+    });
+  });
+
+  adminDashboard
+    ?.querySelector("[data-video-material-dialog]")
+    ?.addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) {
+        closeVideoMaterialDialog();
+      }
+    });
+
+  adminDashboard
+    ?.querySelector("[data-video-material-window]")
+    ?.addEventListener("pointerdown", pulseVideoHeartbeat);
+
+  adminDashboard
+    ?.querySelector("[data-video-heartbeat]")
+    ?.addEventListener("click", pulseVideoHeartbeat);
+
+  adminDashboard
+    ?.querySelector("[data-close-video-material]")
+    ?.addEventListener("click", closeVideoMaterialDialog);
 
   adminDashboard
     ?.querySelector("[data-close-scorm]")

@@ -75,6 +75,49 @@ function escapeInlineScriptJson(value: unknown) {
   return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
 }
 
+function getYouTubeEmbedUrl(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const raw = value.trim();
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+    let videoId: string | null = null;
+
+    if (host === "youtu.be") {
+      videoId = url.pathname.split("/").filter(Boolean)[0] ?? null;
+    } else if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
+      if (url.pathname === "/watch") {
+        videoId = url.searchParams.get("v");
+      } else if (url.pathname.startsWith("/embed/") || url.pathname.startsWith("/shorts/")) {
+        videoId = url.pathname.split("/").filter(Boolean)[1] ?? null;
+      }
+    }
+
+    if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+      return null;
+    }
+
+    const start = Number(url.searchParams.get("t")?.replace(/s$/, "") ?? url.searchParams.get("start") ?? 0);
+    const embed = new URL(`https://www.youtube-nocookie.com/embed/${videoId}`);
+    embed.searchParams.set("rel", "0");
+    embed.searchParams.set("modestbranding", "1");
+    embed.searchParams.set("playsinline", "1");
+    if (Number.isFinite(start) && start > 0) {
+      embed.searchParams.set("start", String(Math.floor(start)));
+    }
+    return embed.toString();
+  } catch {
+    return null;
+  }
+}
+
 function injectContentProtection(html: string, user?: User | null) {
   const watermark = [user?.nama, user?.email].filter(Boolean).join(" · ") || "BrightEd LMS";
   const payload = escapeInlineScriptJson({ watermark });
@@ -268,15 +311,25 @@ router.post("/skillhubs/:skillhub_id/materials", requireRoles([UserRole.admin]),
     const title = typeof req.body.judul === "string" ? req.body.judul.trim() : "";
     const type = req.body.tipe_konten as ContentType;
     const file = req.file;
+    const videoSource = typeof req.body.video_source === "string" ? req.body.video_source : "upload";
+    const youtubeEmbedUrl = type === ContentType.video && videoSource === "youtube"
+      ? getYouTubeEmbedUrl(req.body.youtube_url)
+      : null;
     const extensions: Record<string, string[]> = { scorm: [".zip"], pdf: [".pdf"], video: [".mp4", ".webm"], article: [".txt"] };
     const ext = path.extname(file?.originalname ?? "").toLowerCase();
-    if (!title || title.length > 255 || !file?.size || !extensions[type]?.includes(ext)) return fail(res, 400, "Enter a title and select a valid material file.");
+    if (!title || title.length > 255 || !extensions[type]) return fail(res, 400, "Enter a title and select a valid material type.");
+    if (type === ContentType.video && videoSource === "youtube") {
+      if (!youtubeEmbedUrl) return fail(res, 400, "Enter a valid YouTube video link.");
+    } else if (!file?.size || !extensions[type]?.includes(ext)) {
+      return fail(res, 400, "Enter a title and select a valid material file.");
+    }
     if (!hubId || !await prisma.skillHub.findUnique({ where: { id: hubId } })) return fail(res, 404, "SkillHub not found.");
     const directory = path.join(storageRoot, randomUUID());
     let version = "1.2";
     try {
       await mkdir(directory, { recursive: true });
       if (type === ContentType.scorm) {
+        if (!file) throw new Error("SCORM ZIP file is required.");
         const zip = new AdmZip(file.buffer);
         if (zip.getEntries().reduce((sum, entry) => sum + entry.header.size, 0) > 1024 * 1024 * 1024) throw new Error("Uncompressed package exceeds 1 GB.");
         const manifest = parseManifest(zip);
@@ -290,19 +343,24 @@ router.post("/skillhubs/:skillhub_id/materials", requireRoles([UserRole.admin]),
         // Normalize the entry point for packages with a nested manifest.
         if (manifest.manifestPath !== "imsmanifest.xml") await writeFile(path.join(directory, "imsmanifest.xml"), `<manifest><metadata><schemaversion>${xmlEscape(version)}</schemaversion></metadata><resources><resource href="${xmlEscape(launch)}" /></resources></manifest>`);
       } else {
-        if (type === ContentType.pdf && file.buffer.subarray(0, 5).toString() !== "%PDF-") throw new Error("Please select a valid PDF file.");
-        if (type === ContentType.video && !(ext === ".mp4" ? file.buffer.subarray(4, 8).toString() === "ftyp" : file.buffer.subarray(0, 4).toString("hex") === "1a45dfa3")) throw new Error("Please select a valid MP4 or WebM video.");
         const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         let body: string;
-        if (type === ContentType.article) {
-          if (file.size > 5 * 1024 * 1024 || file.buffer.includes(0)) throw new Error("Please select a UTF-8 text file up to 5 MB.");
-          body = `<article><h1>${escape(title)}</h1><pre>${escape(new TextDecoder("utf-8", { fatal: true }).decode(file.buffer))}</pre></article>`;
+        if (type === ContentType.video && youtubeEmbedUrl) {
+          body = `<section class="youtube-material" data-video-heartbeat><iframe title="${escape(title)}" src="${escape(youtubeEmbedUrl)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe><p class="video-heartbeat-status">Heartbeat aktif. Interaksi di dalam jendela video menjaga sesi tetap berjalan.</p></section>`;
         } else {
-          await writeFile(path.join(directory, `material${ext}`), file.buffer);
-          body = type === ContentType.video ? '<video controls playsinline></video>' : '<iframe title="PDF"></iframe>';
-          body += `<p><a target="_blank" rel="noopener">Open / download</a></p><script>const u=new URL("material${ext}",location.href);u.search=location.search;document.querySelector("video,iframe").src=u.href;document.querySelector("a").href=u.href;</script>`;
+          if (!file) throw new Error("Please select a valid material file.");
+          if (type === ContentType.pdf && file.buffer.subarray(0, 5).toString() !== "%PDF-") throw new Error("Please select a valid PDF file.");
+          if (type === ContentType.video && !(ext === ".mp4" ? file.buffer.subarray(4, 8).toString() === "ftyp" : file.buffer.subarray(0, 4).toString("hex") === "1a45dfa3")) throw new Error("Please select a valid MP4 or WebM video.");
+          if (type === ContentType.article) {
+            if (file.size > 5 * 1024 * 1024 || file.buffer.includes(0)) throw new Error("Please select a UTF-8 text file up to 5 MB.");
+            body = `<article><h1>${escape(title)}</h1><pre>${escape(new TextDecoder("utf-8", { fatal: true }).decode(file.buffer))}</pre></article>`;
+          } else {
+            await writeFile(path.join(directory, `material${ext}`), file.buffer);
+            body = type === ContentType.video ? '<video controls playsinline data-video-heartbeat></video>' : '<iframe title="PDF"></iframe>';
+            body += `<p><a target="_blank" rel="noopener">Open / download</a></p><script>const u=new URL("material${ext}",location.href);u.search=location.search;document.querySelector("video,iframe").src=u.href;document.querySelector("a").href=u.href;</script>`;
+          }
         }
-        await writeFile(path.join(directory, "index.html"), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><style>body{margin:0;background:#faf9f6;color:#232723;font:17px/1.7 system-ui}article{max-width:760px;margin:auto;padding:32px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}video,iframe{display:block;width:100%;height:85vh;border:0}p{padding:0 20px}</style></head><body>${body}</body></html>`);
+        await writeFile(path.join(directory, "index.html"), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><style>body{margin:0;background:#0f1712;color:#fff8ec;font:17px/1.7 system-ui}article{max-width:760px;margin:auto;padding:32px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}video,iframe{display:block;width:100%;height:85vh;border:0;background:#000}.youtube-material{display:grid;gap:12px;min-height:100vh;padding:18px;box-sizing:border-box}.video-heartbeat-status,p{padding:0 20px;color:#d7dfd2;font-size:13px}</style></head><body>${body}</body></html>`);
         await writeFile(path.join(directory, "imsmanifest.xml"), '<manifest><resources><resource href="index.html" /></resources></manifest>');
       }
     } catch (error) {
