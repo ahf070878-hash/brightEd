@@ -1353,6 +1353,7 @@ async function handleLogin(event) {
     await renderStaffDashboard(
       currentUser.role === "fasilitator" || currentUser.role === "pengawas",
     );
+    resetWorkspaceScrollOnMobile();
   } catch (error) {
     setLoginMessage(getErrorMessage(error));
   } finally {
@@ -3999,6 +4000,31 @@ function closeStudentDetail() {
   adminDashboard?.querySelector("[data-student-detail-panel]")?.remove();
 }
 
+function resetWorkspaceScrollOnMobile() {
+  if (!window.matchMedia?.("(max-width: 760px)").matches) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+}
+
+function centerActiveMobileNav() {
+  if (!window.matchMedia?.("(max-width: 760px)").matches) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    adminDashboard?.querySelectorAll(".dashboard-sidebar-tabs").forEach((tabs) => {
+      const active = tabs.querySelector(".tab-button.is-active");
+      if (!active) {
+        return;
+      }
+      const targetLeft = active.offsetLeft - (tabs.clientWidth / 2) + (active.clientWidth / 2);
+      tabs.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
+    });
+  });
+}
+
 function rerenderAdminDashboardFromState() {
   if (!adminDashboard) {
     return;
@@ -4007,6 +4033,7 @@ function rerenderAdminDashboardFromState() {
   adminDashboard.dataset.sidebar = adminSidebarCollapsed ? "collapsed" : "expanded";
   adminDashboard.innerHTML = localizeMarkup(renderAdminMarkup());
   bindAdminDashboardEvents();
+  centerActiveMobileNav();
 }
 
 function rerenderStaffDashboardFromState() {
@@ -4017,6 +4044,7 @@ function rerenderStaffDashboardFromState() {
   adminDashboard.dataset.staffSidebar = staffSidebarCollapsed ? "collapsed" : "expanded";
   adminDashboard.innerHTML = localizeMarkup(renderStaffMarkup());
   bindStaffDashboardEvents();
+  centerActiveMobileNav();
 }
 
 function rerenderStudentDashboardFromState() {
@@ -4027,6 +4055,7 @@ function rerenderStudentDashboardFromState() {
   adminDashboard.dataset.studentSidebar = studentSidebarCollapsed ? "collapsed" : "expanded";
   adminDashboard.innerHTML = localizeMarkup(renderStudentMarkup());
   bindStudentDashboardEvents();
+  centerActiveMobileNav();
 }
 
 function getToastRoot() {
@@ -4737,6 +4766,7 @@ async function renderAdminDashboard(shouldShow) {
     adminDashboard.dataset.sidebar = adminSidebarCollapsed ? "collapsed" : "expanded";
     adminDashboard.innerHTML = localizeMarkup(renderAdminMarkup());
     bindAdminDashboardEvents();
+    centerActiveMobileNav();
     // The loaded view provides confirmation without an interrupting toast.
   } catch (error) {
     adminDashboard.innerHTML = localizeMarkup(renderWorkspaceError(error));
@@ -5353,6 +5383,7 @@ async function renderStudentDashboard(shouldShow) {
     adminDashboard.dataset.studentSidebar = studentSidebarCollapsed ? "collapsed" : "expanded";
     adminDashboard.innerHTML = localizeMarkup(renderStudentMarkup());
     bindStudentDashboardEvents();
+    centerActiveMobileNav();
     // The loaded view provides confirmation without an interrupting toast.
   } catch (error) {
     adminDashboard.innerHTML = localizeMarkup(renderWorkspaceError(error));
@@ -5703,6 +5734,7 @@ async function renderStaffDashboard(shouldShow) {
     adminDashboard.dataset.staffSidebar = staffSidebarCollapsed ? "collapsed" : "expanded";
     adminDashboard.innerHTML = localizeMarkup(renderStaffMarkup());
     bindStaffDashboardEvents();
+    centerActiveMobileNav();
     // The loaded view provides confirmation without an interrupting toast.
   } catch (error) {
     adminDashboard.innerHTML = localizeMarkup(renderWorkspaceError(error));
@@ -5780,6 +5812,7 @@ async function restoreSession() {
     await renderStaffDashboard(
       payload.user.role === "fasilitator" || payload.user.role === "pengawas",
     );
+    resetWorkspaceScrollOnMobile();
   } catch (error) {
     localStorage.removeItem("brighted_token");
     authToken = "";
