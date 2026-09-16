@@ -138,6 +138,25 @@ html,body{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}b
   return `${protection}${html}`;
 }
 
+function setScormContentSecurityHeaders(res: import("express").Response) {
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "connect-src 'self'",
+      "font-src 'self' data:",
+      "frame-ancestors 'self'",
+      "frame-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com",
+      "img-src 'self' data: blob:",
+      "media-src 'self' blob:",
+      "object-src 'none'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+    ].join("; "),
+  );
+}
+
 function parseManifest(zip: AdmZip): ManifestMetadata | undefined {
   const manifestEntry = zip
     .getEntries()
@@ -661,6 +680,7 @@ router.get(
     }
 
     res.setHeader("Cache-Control", "private, no-store");
+    setScormContentSecurityHeaders(res);
     if (protectedHtmlExtensions.has(path.extname(filePath).toLowerCase())) {
       const html = await readFile(filePath, "utf8");
       res.type("html");
