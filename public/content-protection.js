@@ -116,7 +116,6 @@
     }, true);
     document.addEventListener('keydown', blockShortcut, true);
     document.addEventListener('visibilitychange', () => setAwayMode(document.hidden));
-    window.addEventListener('blur', () => setAwayMode(true));
     window.addEventListener('focus', () => setAwayMode(false));
     window.addEventListener('beforeprint', (event) => {
       event.preventDefault();
@@ -142,3 +141,4 @@
     install();
   }
 })();
+
